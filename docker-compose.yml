@@ -1,0 +1,54 @@
+version: "2"
+services:
+
+  postgres:
+    container_name: postgres
+    image: postgres
+    ports:
+        - "5433:5432" # exportando porta diferente por conveniencia
+    environment:
+        POSTGRES_DB: "postgres"
+        POSTGRES_PASSWORD: "password"
+        POSTGRES_USER: "postgres"
+    restart: always
+
+  rabbit:
+    container_name: rabbit
+    image: rabbitmq:3-management
+    ports:
+        - "15672:15672"
+
+  product:
+    build:
+      context: product
+    depends_on:
+      - rabbit
+      - postgres
+    ports:
+        - "8001:8000"
+    links:
+        - "rabbit:rabbit"
+        - "postgres:postgres"  
+    environment:
+        DB_PASSWORD: "password"
+        DB_USER: "postgres"
+        DB_HOST: "localhost"
+        DB_NAME: "postgres"
+        RABBIT_PASSWORD: "guest"
+        RABBIT_USER: "guest"
+        RABBIT_HOST: "rabbit"
+        RABBIT_PORT: "5672"
+        RABBIT_MANAGEMENT_PORT: "15672"
+        
+  gateway:
+    build:
+      context: gateway
+    depends_on:
+      - rabbit
+    ports:
+        - "8000:8000"
+    environment:
+        RABBIT_PASSWORD: "guest"
+        RABBIT_USER: "guest"
+        RABBIT_HOST: "rabbit"
+        RABBIT_PORT: "5672"
